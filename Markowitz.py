@@ -61,7 +61,7 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
-
+        self.portfolio_weights.iloc[:, df.columns.get_indexer(assets)] = 1.0 / len(assets)
         """
         TODO: Complete Task 1 Above
         """
@@ -112,7 +112,20 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
-
+        for row_index, (row_name, row) in enumerate(self.portfolio_weights.iterrows()):
+            if row_index <= self.lookback:
+                continue
+            
+            sum = 0.0
+            for asset in assets:
+                col_index = df_returns.columns.get_loc(asset)
+                std = df_returns.iloc[row_index - self.lookback:row_index, col_index].std(ddof=0)
+                self.portfolio_weights.at[row_name, asset] = 1.0 / std
+                sum += 1.0 / std
+            
+            if sum == 0.0: continue
+            for asset in assets:
+                self.portfolio_weights.at[row_name, asset] /= sum
         """
         TODO: Complete Task 2 Above
         """
@@ -187,9 +200,12 @@ class MeanVariancePortfolio:
 
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                w = model.addMVar(n, name="w", ub=1.0)
 
+                obj_expr = w.transpose() @ mu - gamma / 2 * w.transpose() @ Sigma @ w
+                model.setObjective(obj_expr, gp.GRB.MAXIMIZE)
+
+                model.addConstr(w.sum() == 1, name="budget_constraint")
                 """
                 TODO: Complete Task 3 Above
                 """
@@ -493,3 +509,4 @@ if __name__ == "__main__":
     if args.report:
         if "mv" in args.report:
             helper.plot_report_metrics()
+

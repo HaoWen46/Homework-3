@@ -69,7 +69,45 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
+        df_returns = self.returns
+        for i in range(self.lookback + 1, len(df)):
+            R_n = df_returns.copy()[assets].iloc[i - self.lookback: i]
+            Sigma = R_n.cov().values
+            mu = R_n.mean().values
+            n = len(R_n.columns)
+            solution = []
+            """
+            with gp.Env(empty=True) as env:
+                env.setParam("OutputFlag", 0)
+                env.setParam("DualReductions", 0)
+                env.start()
+                with gp.Model(env=env, name="portfolio") as model:
+                    w = model.addMVar(n, name="w")
 
+                    obj_expr = w @ Sigma @ w
+                    model.setObjective(obj_expr, gp.GRB.MINIMIZE)
+
+                    model.addConstr(w @ mu <= 1, name="budget_constraint")
+                    model.addConstr(w @ Sigma @ w >= 0)
+                    model.addConstr(w.sum() >= 0.01)
+                    model.optimize()
+
+                    if model.status == gp.GRB.OPTIMAL or model.status == gp.GRB.SUBOPTIMAL:
+                        for j in range(n):
+                            var = model.getVarByName(f"w[{j}]")
+                            solution.append(var.X)
+
+            if solution:
+                total = sum(solution)
+                self.portfolio_weights.loc[self.returns.index[i], assets] = [e / total for e in solution]
+            """
+            k = 1
+            for j in range(n):
+                self.portfolio_weights.iloc[i, j + 1] = 0.0
+                if df_returns.iloc[i, k] < df_returns.iloc[i, j + 1]:
+                    k = j + 1
+            if df_returns.iloc[i, k] > 0.0:
+                self.portfolio_weights.iloc[i, k] = 1.0
         """
         TODO: Complete Task 4 Above
         """
@@ -258,3 +296,4 @@ if __name__ == "__main__":
             judge.cumulative_product(df)
         if "bmp" in args.cumulative:
             judge.cumulative_product(Bdf)
+
